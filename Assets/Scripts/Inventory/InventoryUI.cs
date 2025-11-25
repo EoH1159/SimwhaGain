@@ -1,19 +1,19 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class InventoryUI : MonoBehaviour
 {
-    public Inventory inventory;              // ½ÇÁ¦ ÀÎº¥Åä¸® µ¥ÀÌÅÍ
-    public InventorySlotUI slotPrefab;       // ½½·Ô ÇÁ¸®ÆÕ
-    public Transform slotsParent;            // ½½·ÔµéÀÌ ºÙÀ» ºÎ¸ğ
+    public Inventory inventory;              // ì‹¤ì œ ì¸ë²¤í† ë¦¬ ë°ì´í„°
+    public InventorySlotUI slotPrefab;       // ìŠ¬ë¡¯ í”„ë¦¬íŒ¹
+    public Transform slotsParent;            // ìŠ¬ë¡¯ë“¤ì´ ë¶™ì„ ë¶€ëª¨
 
     private List<InventorySlotUI> slots = new();
 
     private void Start()
     {
-        // TODO: inventory.capacity ¸¸Å­ ½½·Ô »ı¼ºÇØ¼­ slots ¸®½ºÆ®¿¡ ³Ö±â
-        // ±×¸®°í Ã³À½ ÇÑ ¹ø Refresh() È£Ãâ
+        // TODO: inventory.capacity ë§Œí¼ ìŠ¬ë¡¯ ìƒì„±í•´ì„œ slots ë¦¬ìŠ¤íŠ¸ì— ë„£ê¸°
+        // ê·¸ë¦¬ê³  ì²˜ìŒ í•œ ë²ˆ Refresh() í˜¸ì¶œ
         for (int i = 0; i < inventory.capacity; i++)
         {
             InventorySlotUI newSlot = Instantiate(slotPrefab, slotsParent);
@@ -24,8 +24,8 @@ public class InventoryUI : MonoBehaviour
 
     public void Refresh()
     {
-        // TODO: inventory.items ³»¿ëÀ» ÀĞ¾î¼­
-        // slots[i].SetItem(ÇØ´ç InventoryItem ¶Ç´Â null) È£Ãâ
+        // TODO: inventory.items ë‚´ìš©ì„ ì½ì–´ì„œ
+        // slots[i].SetItem(í•´ë‹¹ InventoryItem ë˜ëŠ” null) í˜¸ì¶œ
         for (int i = 0; i < slots.Count; i++)
         {
             if (i < inventory.items.Count)

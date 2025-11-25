@@ -23,7 +23,7 @@ public class InventorySlotUI : MonoBehaviour
 
         if (item.data.isEquipment)
         {
-            durabilityText.text = $"Durability: {item.currentDurability}/{item.data.maxDurability}";
+            durabilityText.text = $"내구도: {item.currentDurability}/{item.data.maxDurability}";
         }
         else
         {
