@@ -6,10 +6,30 @@ public class Tile : MonoBehaviour
     public int x;
     public int y;
 
+    SpriteRenderer sr;
+    Color normalColor;
+    public Color highlightColor = Color.cyan; // 인스펙터에서 바꿀 수도 있음
+
+    private void Awake()
+    {
+        sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            normalColor = sr.color;
+        }
+    }
+
     public void Init(int x, int y)
     {
         this.x = x;
         this.y = y;
+    }
+
+    public void SetHighlight(bool on)
+    {
+        if (sr == null) return;
+
+        sr.color = on ? highlightColor : normalColor;
     }
 
     private void OnMouseDown()
