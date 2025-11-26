@@ -1,14 +1,25 @@
-﻿
+﻿using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleManager : MonoBehaviour
 {
+    public enum TurnPhase
+    {
+        Player,
+        Enemy
+    }
+
+    public TurnPhase currentPhase = TurnPhase.Player;
+
     public static BattleManager Instance { get; private set; }
 
     public bool canMoveThisTurn = true;
     public bool isMoveMode = false;
     public UnitStatus selectedUnit;   // 현재 선택된 유닛 (일단 플레이어 하나)
     public GridManager gridManager;
+
+    public TMP_Text turnText;
 
     private void Awake()
     {
@@ -22,10 +33,28 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
-        if (selectedUnit != null && gridManager != null)
+        if (gridManager == null) return;
+
+        // 1) 플레이어 유닛 시작 타일 세팅
+        if (selectedUnit != null)
         {
             Tile startTile = gridManager.GetClosestTile(selectedUnit.transform.position);
-            selectedUnit.currentTile = startTile;
+            if (startTile != null)
+            {
+                selectedUnit.currentTile = startTile;
+            }
+
+            // 적 유닛들도 타일 세팅
+            UnitStatus[] allUnits = FindObjectsOfType<UnitStatus>();
+            foreach (var unit in allUnits)
+            {
+                if (unit.faction == UnitStatus.Faction.Enemy)
+                {
+                    Tile t = gridManager.GetClosestTile(unit.transform.position);
+                    if (t != null)
+                        unit.currentTile = t;
+                }
+            }
         }
     }
 
@@ -39,7 +68,12 @@ public class BattleManager : MonoBehaviour
 
     public void OnTileClicked(Tile tile)
     {
-
+        // 플레이어 턴이 아니면 바로 리턴
+        if (currentPhase != TurnPhase.Player)
+        {
+            Debug.Log("지금은 플레이어 턴이 아닙니다.");
+            return;
+        }
 
         Debug.Log($"OnTileClicked! tile=({tile.x}, {tile.y})");
 
@@ -83,7 +117,77 @@ public class BattleManager : MonoBehaviour
         {
             gridManager.ClearAllHighlights();
         }
+        if (selectedUnit != null)
+        {
+            selectedUnit.SetSelected(false);
+        }
         Debug.Log("유닛 이동 완료");
+    }
+
+    public void StartPlayerTurn()
+    {
+        currentPhase = TurnPhase.Player;
+        canMoveThisTurn = true;
+        isMoveMode = false;
+
+        if (gridManager != null)
+            gridManager.ClearAllHighlights();
+
+        if (turnText != null)
+            turnText.text = "플레이어 턴";
+
+        Debug.Log("플레이어 턴 시작");
+    }
+
+    public void StartEnemyTurn()
+    {
+        StartCoroutine(EnemyTurnRoutine());
+    }
+    private System.Collections.IEnumerator EnemyTurnRoutine()
+    {
+        currentPhase = TurnPhase.Enemy;
+        canMoveThisTurn = false;
+        isMoveMode = false;
+
+        if (gridManager != null)
+            gridManager.ClearAllHighlights();
+
+        if (turnText != null)
+            turnText.text = "적 턴";
+
+        Debug.Log("적 턴 시작");
+
+        // 0.5초 정도 적 턴 화면 보여주기
+        yield return new WaitForSeconds(0.5f);
+
+        // 여기서 적 AI 행동 실행
+        UnitStatus[] allUnits = FindObjectsOfType<UnitStatus>();
+        foreach (var unit in allUnits)
+        {
+            if (unit.faction == UnitStatus.Faction.Enemy)
+            {
+                Tile enemyTile = unit.currentTile;
+                Tile playerTile = selectedUnit.currentTile;
+                if (enemyTile == null || playerTile == null) continue;
+
+                List<Tile> path = gridManager.FindPathBFS(enemyTile, playerTile);
+
+                if (path.Count > 1)
+                {
+                    Tile nextTile = path[1];
+                    Vector3 pos = unit.transform.position;
+                    Vector3 targetPos = nextTile.transform.position;
+                    unit.transform.position = new Vector3(targetPos.x, targetPos.y, pos.z);
+                    unit.currentTile = nextTile;
+                }
+            }
+        }
+
+        // (선택) 적 이동이 보이도록 조금 더 기다릴 수도 있음
+        yield return new WaitForSeconds(0.2f);
+
+        // 플레이어 턴 시작
+        StartPlayerTurn();
     }
 
     public void StartNextTurn()
@@ -95,5 +199,22 @@ public class BattleManager : MonoBehaviour
         canMoveThisTurn = true;
         isMoveMode = false;
         Debug.Log("다음 턴 시작! 다시 이동할 수 있습니다.");
+    }
+
+    public void SetSelectedUnit(UnitStatus unit)
+    {
+        // 이전 선택 유닛 해제
+        if (selectedUnit != null && selectedUnit != unit)
+        {
+            selectedUnit.SetSelected(false);
+        }
+
+        selectedUnit = unit;
+
+        // 새 유닛 선택
+        if (selectedUnit != null)
+        {
+            selectedUnit.SetSelected(true);
+        }
     }
 }

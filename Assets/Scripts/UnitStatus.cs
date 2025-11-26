@@ -3,6 +3,14 @@ using UnityEngine;
 
 public class UnitStatus : MonoBehaviour
 {
+    public enum Faction
+    {
+        Player,
+        Enemy
+    }
+
+    public Faction faction = Faction.Player;  // 기본은 플레이어
+
     public int maxHP;
     public int currentHP;
 
@@ -15,6 +23,25 @@ public class UnitStatus : MonoBehaviour
                           // 공격력은 "기본 공격력"만 들고 있고,
                           // 실제 공격 시에 선택한 무기 정보(InventoryItem)를 추가로 넘겨서 계산
     public Tile currentTile;
+
+    SpriteRenderer sr;
+    Color normalColor;
+    public Color selectedColor = Color.yellow;  // 선택 시 색 (인스펙터에서 바꿔도 됨)
+
+    private void Awake()
+    {
+        sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            normalColor = sr.color;
+        }
+    }
+
+    public void SetSelected(bool selected)
+    {
+        if (sr == null) return;
+        sr.color = selected ? selectedColor : normalColor;
+    }
 
     public void Die()
     {

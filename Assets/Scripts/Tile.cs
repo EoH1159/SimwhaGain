@@ -8,7 +8,7 @@ public class Tile : MonoBehaviour
 
     SpriteRenderer sr;
     Color normalColor;
-    public Color highlightColor = Color.cyan; // 인스펙터에서 바꿀 수도 있음
+    public Color highlightColor = new Color(1f, 0.6f, 0f); // 주황
 
     private void Awake()
     {

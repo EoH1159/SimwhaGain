@@ -11,7 +11,7 @@ public class CommandUI : MonoBehaviour
     public void Show(UnitStatus unit)
     {
         currentUnit = unit;                        //  기억해두기
-        battleManager.selectedUnit = unit;
+        battleManager.SetSelectedUnit(unit);
         panel.SetActive(true);
     }
 
@@ -49,7 +49,12 @@ public class CommandUI : MonoBehaviour
 
     public void OnClickEndTurn()
     {
-        battleManager.StartNextTurn();
+        if (battleManager.selectedUnit != null)
+        {
+            battleManager.selectedUnit.SetSelected(false);
+        }
+
+        battleManager.StartEnemyTurn();
         panel.SetActive(false);
     }
 }

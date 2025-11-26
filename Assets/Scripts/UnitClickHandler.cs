@@ -8,7 +8,7 @@ public class UnitClickHandler : MonoBehaviour
 
     private void OnMouseDown()
     {
-        Debug.Log("Unit clicked");  // 클릭 확인용
+        Debug.Log("Player Unit clicked!");
 
         if (commandUI != null)
         {

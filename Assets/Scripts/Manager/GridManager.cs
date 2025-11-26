@@ -1,11 +1,13 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    public int width = 8;
-    public int height = 5;
+    public int width = 12;
+    public int height = 8;
     public GameObject tilePrefab;
-    public float tileSize = 1.5f;
+    public float tileSize = 1.0f;
 
     public Tile[,] tiles;   // (x,y) 위치의 타일을 기억하는 2차원 배열
 
@@ -97,5 +99,77 @@ public class GridManager : MonoBehaviour
             }
         }
         return closestTile;
+    }
+
+    public List<Tile> GetNeighbors(Tile tile)
+    {
+        List<Tile> neighbors = new List<Tile>();
+
+        int x = tile.x;
+        int y = tile.y;
+
+        if (x + 1 < width) neighbors.Add(tiles[x + 1, y]); // 오른쪽
+        if (x - 1 >= 0) neighbors.Add(tiles[x - 1, y]); // 왼쪽
+        if (y + 1 < height) neighbors.Add(tiles[x, y + 1]); // 위
+        if (y - 1 >= 0) neighbors.Add(tiles[x, y - 1]); // 아래
+
+        return neighbors;
+    }
+    public List<Tile> FindPathBFS(Tile start, Tile goal)
+    {
+        // start에서 goal까지 가는 "최단 칸 수" 경로를 반환
+        List<Tile> path = new List<Tile>();
+
+        if (start == null || goal == null)
+            return path;
+
+        Queue<Tile> queue = new Queue<Tile>();
+        HashSet<Tile> visited = new HashSet<Tile>();
+        Dictionary<Tile, Tile> cameFrom = new Dictionary<Tile, Tile>();
+
+        // 1. 시작 타일 셋업
+        queue.Enqueue(start);
+        visited.Add(start);
+
+        // 2. BFS 루프
+        while (queue.Count > 0)
+        {
+            Tile current = queue.Dequeue();
+
+            if (current == goal)
+            {
+                break; // 목표 도달!
+            }
+
+            foreach (Tile neighbor in GetNeighbors(current))
+            {
+                // TODO: 아직 방문 안 했으면 queue에 넣고, cameFrom 기록
+                if (!visited.Contains(neighbor))
+                {
+                    queue.Enqueue(neighbor);
+                    visited.Add(neighbor);
+                    cameFrom[neighbor] = current;
+                }
+            }
+        }
+
+        // 3. goal에서 start까지 역추적해서 path 만들기
+        if (!visited.Contains(goal))
+        {
+            // goal에 도달 못했다면 빈 경로 반환
+            return path;
+        }
+
+        Tile temp = goal;
+        while (temp != null && temp != start)
+        {
+            path.Add(temp);
+            if (!cameFrom.ContainsKey(temp)) break;
+            temp = cameFrom[temp];
+        }
+        path.Add(start);
+        path.Reverse();
+
+        return path;
     }
 }
