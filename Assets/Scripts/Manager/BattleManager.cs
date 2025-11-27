@@ -261,50 +261,15 @@ public class BattleManager : MonoBehaviour
 
     public void Attack(UnitStatus attacker, UnitStatus target)
     {
-        // 1. 턴 / 모드 / 널 체크
-        if (currentPhase != TurnPhase.Player)
-        {
-            Debug.Log("지금은 플레이어 턴이 아닙니다.");
+        if (!CanAttack(attacker, target))
             return;
-        }
-        if (!isAttackMode)
-        {
-            Debug.Log("공격 모드가 아닙니다.");
+
+        if (!IsInWeaponRange(attacker, target))
             return;
-        }
-        if (attacker == null || target == null)
-        {
-            Debug.LogWarning("공격자 또는 대상이 null입니다.");
-            return;
-        }
 
-        // 2. 인접한 칸인지 체크 (맨해튼 거리 1칸)
-        if (attacker.currentTile == null || target.currentTile == null)
-        {
-            Debug.LogWarning("타일 정보가 없습니다.");
-            return;
-        }
 
-        int minRange = 1;
-        int maxRange = 1;
-        if (pendingWeapon != null && pendingWeapon.data != null)
-        {
-            minRange = pendingWeapon.data.minAttackRange;
-            maxRange = pendingWeapon.data.attackRange;
-        }
-
-        int dist = Mathf.Abs(attacker.currentTile.x - target.currentTile.x)
-                 + Mathf.Abs(attacker.currentTile.y - target.currentTile.y);
-
-        // 최소/최대 범위 체크
-        if (dist < minRange || dist > maxRange)
-        {
-            Debug.Log($"대상이 사거리({minRange}~{maxRange}) 밖에 있습니다.");
-            return;
-        }
-
-            // 3. 데미지 계산 (무기 포함)
-            int weaponAttack = 0;
+        // 3. 데미지 계산 (무기 포함)
+        int weaponAttack = 0;
             if (pendingWeapon != null && pendingWeapon.data != null)
             {
                 weaponAttack = pendingWeapon.data.bonusAttack;  // ItemData 안 무기 공격력 필드명
@@ -379,7 +344,53 @@ public class BattleManager : MonoBehaviour
                 ui.Refresh();
             }
         }
-    
+    private bool CanAttack(UnitStatus attacker, UnitStatus target)
+    {
+        if (currentPhase != TurnPhase.Player)
+        {
+            Debug.Log("지금은 플레이어 턴이 아닙니다.");
+            return false;
+        }
+        if (!isAttackMode)
+        {
+            Debug.Log("공격 모드가 아닙니다.");
+            return false;
+        }
+        if (attacker == null || target == null)
+        {
+            Debug.LogWarning("공격자 또는 대상이 null입니다.");
+            return false;
+        }
+        if (attacker.currentTile == null || target.currentTile == null)
+        {
+            Debug.LogWarning("타일 정보가 없습니다.");
+            return false;
+        }
+
+        return true;
+    }
+    private bool IsInWeaponRange(UnitStatus attacker, UnitStatus target)
+    {
+        int minRange = 1;
+        int maxRange = 1;
+        if (pendingWeapon != null && pendingWeapon.data != null)
+        {
+            minRange = pendingWeapon.data.minAttackRange;
+            maxRange = pendingWeapon.data.attackRange;
+        }
+
+        int dist = Mathf.Abs(attacker.currentTile.x - target.currentTile.x)
+                 + Mathf.Abs(attacker.currentTile.y - target.currentTile.y);
+
+        // 최소/최대 범위 체크
+        if (dist < minRange || dist > maxRange)
+        {
+            Debug.Log($"대상이 사거리({minRange}~{maxRange}) 밖에 있습니다.");
+            return false;   // 사거리 바깥이니까 공격 불가
+        }
+        return true;        // 여기까지 왔다는 건 사거리 안이라 OK
+    }
+
 
     public void OnWeaponSelected(InventoryItem weapon)
     {
