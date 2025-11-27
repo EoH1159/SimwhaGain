@@ -164,6 +164,8 @@ public class BattleManager : MonoBehaviour
     public void StartEnemyTurn()
     {
         StartCoroutine(EnemyTurnRoutine());
+        if (EnemyStatusUI.Instance != null)
+            EnemyStatusUI.Instance.Hide();
     }
     private System.Collections.IEnumerator EnemyTurnRoutine()
     {
@@ -376,6 +378,14 @@ public class BattleManager : MonoBehaviour
         // 4. HP 감소
         target.currentHP -= damage;
         Debug.Log($"{attacker.name} 이(가) {target.name} 을(를) 공격! 데미지: {damage}, 남은 HP: {target.currentHP}");
+
+        // 적 HP 패널 갱신 (플레이어가 적을 공격할 때만)
+        if (EnemyStatusUI.Instance != null &&
+            attacker.faction == UnitStatus.Faction.Player &&
+            target.faction == UnitStatus.Faction.Enemy)
+        {
+            EnemyStatusUI.Instance.Show(target);
+        }
 
         // 공격 EXP (플레이어만)
         if (attacker.faction == UnitStatus.Faction.Player)

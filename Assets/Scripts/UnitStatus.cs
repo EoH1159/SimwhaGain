@@ -98,8 +98,13 @@ public class UnitStatus : MonoBehaviour
     public void Die()
     {
         Debug.Log($"{gameObject.name} 이(가) 사망했습니다.");
-        // TODO: 애니메이션, 이펙트, 대사 등 나중에 여기서 처리
         StopAllCoroutines();
+        // 적이 죽을 때 패널 숨기기
+        if (EnemyStatusUI.Instance != null && faction == Faction.Enemy)
+        {
+            EnemyStatusUI.Instance.Hide();
+        }
+
         Destroy(gameObject);
     }
 }
