@@ -149,7 +149,8 @@ public class BattleManager : MonoBehaviour
         isMoveMode = false;
         isAttackMode = false;
         isWeaponSelectMode = false;
-
+        hasAttackedThisTurn = false; 
+        pendingWeapon = null;
 
         if (gridManager != null)
             gridManager.ClearAllHighlights();
@@ -169,6 +170,8 @@ public class BattleManager : MonoBehaviour
         currentPhase = TurnPhase.Enemy;
         canMoveThisTurn = false;
         isMoveMode = false;
+        isAttackMode = false;
+        isWeaponSelectMode = false;
 
         if (gridManager != null)
             gridManager.ClearAllHighlights();
@@ -222,7 +225,6 @@ public class BattleManager : MonoBehaviour
                 }
             }
         }
-        
 
         // (선택) 적 이동이 보이도록 조금 더 기다릴 수도 있음
         yield return new WaitForSeconds(0.2f);
@@ -267,46 +269,11 @@ public class BattleManager : MonoBehaviour
         if (!IsInWeaponRange(attacker, target))
             return;
 
+        int damage = CalculateDamage(attacker, target, pendingWeapon);
+        ApplyDamageAndExp(attacker, target, damage);
 
-        // 3. 데미지 계산 (무기 포함)
-        int weaponAttack = 0;
-            if (pendingWeapon != null && pendingWeapon.data != null)
-            {
-                weaponAttack = pendingWeapon.data.bonusAttack;  // ItemData 안 무기 공격력 필드명
-            }
-
-            int totalAttack = attacker.attack + weaponAttack;
-            int damage = Mathf.Max(totalAttack - target.defense, 0);
-
-            // 4. HP 감소
-            target.currentHP -= damage;
-            Debug.Log($"{attacker.name} 이(가) {target.name} 을(를) 공격! 데미지: {damage}, 남은 HP: {target.currentHP}");
-
-            // 공격 EXP (플레이어만)
-            if (attacker.faction == UnitStatus.Faction.Player)
-            {
-                attacker.GainExp(25);
-            }
-
-            // 5. 죽었는지 체크 먼저
-            if (target.currentHP <= 0)
-            {
-                // 처치 EXP (플레이어만)
-                if (attacker.faction == UnitStatus.Faction.Player)
-                {
-                    attacker.GainExp(50);
-                }
-
-                target.Die();
-            }
-            else
-            {
-                // 살아있는 경우에만 피격 연출 실행
-                StartCoroutine(target.HitFlash());
-            }
-
-            // 6. 무기 내구도 처리
-            if (pendingWeapon != null && pendingWeapon.data != null && pendingWeapon.data.isEquipment)
+        // 6. 무기 내구도 처리
+        if (pendingWeapon != null && pendingWeapon.data != null && pendingWeapon.data.isEquipment)
             {
                 pendingWeapon.currentDurability--;
                 Debug.Log($"무기 내구도 감소: {pendingWeapon.currentDurability}/{pendingWeapon.data.maxDurability}");
@@ -390,7 +357,49 @@ public class BattleManager : MonoBehaviour
         }
         return true;        // 여기까지 왔다는 건 사거리 안이라 OK
     }
+    private int CalculateDamage(UnitStatus attacker, UnitStatus target, InventoryItem weapon)
+    {
+        // 3. 데미지 계산 (무기 포함)
+        int weaponAttack = 0;
+        if (weapon != null && weapon.data != null)
+        {
+            weaponAttack = weapon.data.bonusAttack;
+        }
 
+        int totalAttack = attacker.attack + weaponAttack;
+        int damage = Mathf.Max(totalAttack - target.defense, 0);
+
+       return damage;
+    }
+    private void ApplyDamageAndExp(UnitStatus attacker, UnitStatus target, int damage)
+    {
+        // 4. HP 감소
+        target.currentHP -= damage;
+        Debug.Log($"{attacker.name} 이(가) {target.name} 을(를) 공격! 데미지: {damage}, 남은 HP: {target.currentHP}");
+
+        // 공격 EXP (플레이어만)
+        if (attacker.faction == UnitStatus.Faction.Player)
+        {
+            attacker.GainExp(25);
+        }
+
+        // 5. 죽었는지 체크 먼저
+        if (target.currentHP <= 0)
+        {
+            // 처치 EXP (플레이어만)
+            if (attacker.faction == UnitStatus.Faction.Player)
+            {
+                attacker.GainExp(50);
+            }
+
+            target.Die();
+        }
+        else
+        {
+            // 살아있는 경우에만 피격 연출 실행
+            StartCoroutine(target.HitFlash());
+        }
+    }
 
     public void OnWeaponSelected(InventoryItem weapon)
     {
