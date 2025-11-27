@@ -106,6 +106,7 @@ MonoBehaviour:
   moveRange: 3
   luck: 2
   currentTile: {fileID: 0}
+  selectedColor: {r: 1, g: 0.7764706, b: 0.015686275, a: 1}
 --- !u!61 &5066621146509512641
 BoxCollider2D:
   m_ObjectHideFlags: 0

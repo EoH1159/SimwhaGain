@@ -47,6 +47,26 @@ public class CommandUI : MonoBehaviour
         panel.SetActive(false);
     }
 
+    public void OnClickAttack()
+    {
+        Debug.Log("Attack 버튼 눌림 (무기 선택 모드)");
+
+        if (battleManager.hasAttackedThisTurn)
+        {
+            Debug.Log("이번 턴에는 이미 공격했습니다.");
+            return;
+        }
+
+        battleManager.isMoveMode = false;
+        battleManager.isAttackMode = false;      // 아직 공격 대상 선택 X
+        battleManager.isWeaponSelectMode = true; // 무기 고르는 중
+
+        // 인벤토리 열기
+        UIManager.Instance.ShowInventory(true);
+
+        panel.SetActive(false);
+    }
+
     public void OnClickEndTurn()
     {
         if (battleManager.selectedUnit != null)

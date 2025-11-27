@@ -22,6 +22,11 @@ public class InventoryUI : MonoBehaviour
         Refresh();
     }
 
+    private void OnEnable()
+    {
+        Refresh();
+    }
+
     public void Refresh()
     {
         // TODO: inventory.items 내용을 읽어서

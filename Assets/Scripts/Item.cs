@@ -34,5 +34,7 @@
     public int bonusAttack;    // 공격력 보너스
     public int bonusDefense;   // 방어력 보너스
     public int maxDurability;  // 최대 내구도
+    public int minAttackRange = 1;   // 기본은 1
+    public int attackRange = 1;      // 이건 최대 사거리 역할로 사용
 }
 

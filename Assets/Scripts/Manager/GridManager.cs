@@ -81,6 +81,29 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    public void HighlightAttackRange(UnitStatus unit, int minRange, int maxRange)
+    {
+        ClearAllHighlights();
+        if (unit == null || unit.currentTile == null) return;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile tile = tiles[x, y];
+                if (tile == null) continue;
+
+                int distance = Mathf.Abs(unit.currentTile.x - tile.x)
+                             + Mathf.Abs(unit.currentTile.y - tile.y);
+
+                if (distance >= minRange && distance <= maxRange)
+                {
+                    tile.SetHighlight(true);
+                }
+            }
+        }
+    }
+
     public Tile GetClosestTile(Vector3 worldPos)
     {
         Tile closestTile = null;

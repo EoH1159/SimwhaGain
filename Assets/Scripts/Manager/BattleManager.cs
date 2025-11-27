@@ -16,7 +16,12 @@ public class BattleManager : MonoBehaviour
 
     public bool canMoveThisTurn = true;
     public bool isMoveMode = false;
+    public bool isAttackMode = false;
+    public bool isWeaponSelectMode = false;
+    public bool hasAttackedThisTurn = false;
+
     public UnitStatus selectedUnit;   // 현재 선택된 유닛 (일단 플레이어 하나)
+    public InventoryItem pendingWeapon;     //  이번 공격에 쓸 무기
     public GridManager gridManager;
 
     public TMP_Text turnText;
@@ -53,6 +58,7 @@ public class BattleManager : MonoBehaviour
                     Tile t = gridManager.GetClosestTile(unit.transform.position);
                     if (t != null)
                         unit.currentTile = t;
+                    t.occupant = unit;
                 }
             }
         }
@@ -104,12 +110,24 @@ public class BattleManager : MonoBehaviour
             Debug.Log("이번 턴에는 이미 이동했습니다.");
             return;
         }
+        // 1) 타겟 타일에 다른 유닛이 서 있는지 체크
+        if (tile.occupant != null && tile.occupant != selectedUnit)
+        {
+            Debug.Log("이 타일에는 이미 다른 유닛이 서 있습니다.");
+            return;
+        }
 
         Vector3 unitPos = selectedUnit.transform.position;
         Vector3 tilePos = tile.transform.position;
+        // 2) 이전 타일 occupant 비우기
+        if (selectedUnit.currentTile != null)
+        {
+            selectedUnit.currentTile.occupant = null;
+        }
 
         selectedUnit.transform.position = new Vector3(tilePos.x, tilePos.y, unitPos.z);
         selectedUnit.currentTile = tile;
+        tile.occupant = selectedUnit;
 
         canMoveThisTurn = false; // 이번 턴 이동 사용 완료
         isMoveMode = false;      // 이동 모드 종료
@@ -129,6 +147,9 @@ public class BattleManager : MonoBehaviour
         currentPhase = TurnPhase.Player;
         canMoveThisTurn = true;
         isMoveMode = false;
+        isAttackMode = false;
+        isWeaponSelectMode = false;
+
 
         if (gridManager != null)
             gridManager.ClearAllHighlights();
@@ -175,13 +196,33 @@ public class BattleManager : MonoBehaviour
                 if (path.Count > 1)
                 {
                     Tile nextTile = path[1];
+
+                    //  1) 다음 타일에 누가 서 있는지 확인
+                    if (nextTile.occupant != null && nextTile.occupant != unit)
+                    {
+                        // 플레이어나 다른 적이 이미 서 있음 → 이 적은 이번 턴 이동 안 함
+                        Debug.Log($"{unit.name} 이동 불가: {nextTile.occupant.name} 이(가) 자리 차지 중");
+                        continue;
+                    }
+
+                    //  2) 이전 타일 occupant 비우기
+                    if (enemyTile.occupant == unit)
+                    {
+                        enemyTile.occupant = null;
+                    }
+
+                    //  3) 실제 위치 이동
                     Vector3 pos = unit.transform.position;
                     Vector3 targetPos = nextTile.transform.position;
                     unit.transform.position = new Vector3(targetPos.x, targetPos.y, pos.z);
+
+                    //  4) currentTile + occupant 갱신
                     unit.currentTile = nextTile;
+                    nextTile.occupant = unit;
                 }
             }
         }
+        
 
         // (선택) 적 이동이 보이도록 조금 더 기다릴 수도 있음
         yield return new WaitForSeconds(0.2f);
@@ -216,5 +257,160 @@ public class BattleManager : MonoBehaviour
         {
             selectedUnit.SetSelected(true);
         }
+    }
+
+    public void Attack(UnitStatus attacker, UnitStatus target)
+    {
+        // 1. 턴 / 모드 / 널 체크
+        if (currentPhase != TurnPhase.Player)
+        {
+            Debug.Log("지금은 플레이어 턴이 아닙니다.");
+            return;
+        }
+        if (!isAttackMode)
+        {
+            Debug.Log("공격 모드가 아닙니다.");
+            return;
+        }
+        if (attacker == null || target == null)
+        {
+            Debug.LogWarning("공격자 또는 대상이 null입니다.");
+            return;
+        }
+
+        // 2. 인접한 칸인지 체크 (맨해튼 거리 1칸)
+        if (attacker.currentTile == null || target.currentTile == null)
+        {
+            Debug.LogWarning("타일 정보가 없습니다.");
+            return;
+        }
+
+        int minRange = 1;
+        int maxRange = 1;
+        if (pendingWeapon != null && pendingWeapon.data != null)
+        {
+            minRange = pendingWeapon.data.minAttackRange;
+            maxRange = pendingWeapon.data.attackRange;
+        }
+
+        int dist = Mathf.Abs(attacker.currentTile.x - target.currentTile.x)
+                 + Mathf.Abs(attacker.currentTile.y - target.currentTile.y);
+
+        // 최소/최대 범위 체크
+        if (dist < minRange || dist > maxRange)
+        {
+            Debug.Log($"대상이 사거리({minRange}~{maxRange}) 밖에 있습니다.");
+            return;
+        }
+
+            // 3. 데미지 계산 (무기 포함)
+            int weaponAttack = 0;
+            if (pendingWeapon != null && pendingWeapon.data != null)
+            {
+                weaponAttack = pendingWeapon.data.bonusAttack;  // ItemData 안 무기 공격력 필드명
+            }
+
+            int totalAttack = attacker.attack + weaponAttack;
+            int damage = Mathf.Max(totalAttack - target.defense, 0);
+
+            // 4. HP 감소
+            target.currentHP -= damage;
+            Debug.Log($"{attacker.name} 이(가) {target.name} 을(를) 공격! 데미지: {damage}, 남은 HP: {target.currentHP}");
+
+            // 공격 EXP (플레이어만)
+            if (attacker.faction == UnitStatus.Faction.Player)
+            {
+                attacker.GainExp(25);
+            }
+
+            // 5. 죽었는지 체크 먼저
+            if (target.currentHP <= 0)
+            {
+                // 처치 EXP (플레이어만)
+                if (attacker.faction == UnitStatus.Faction.Player)
+                {
+                    attacker.GainExp(50);
+                }
+
+                target.Die();
+            }
+            else
+            {
+                // 살아있는 경우에만 피격 연출 실행
+                StartCoroutine(target.HitFlash());
+            }
+
+            // 6. 무기 내구도 처리
+            if (pendingWeapon != null && pendingWeapon.data != null && pendingWeapon.data.isEquipment)
+            {
+                pendingWeapon.currentDurability--;
+                Debug.Log($"무기 내구도 감소: {pendingWeapon.currentDurability}/{pendingWeapon.data.maxDurability}");
+
+                // 내구도 0 이하 → 부서짐
+                if (pendingWeapon.currentDurability <= 0)
+                {
+                    var inv = attacker.GetComponent<Inventory>();
+                    if (inv != null)
+                    {
+                        inv.RemoveItem(pendingWeapon); // Inventory가 InventoryItem Remove하도록 되어 있어야 함
+                    }
+                    Debug.Log($"무기 {pendingWeapon.data.itemName} 이(가) 부서졌습니다.");
+                }
+            }
+
+            // 7. 공격 종료 후 상태 정리
+            hasAttackedThisTurn = true;
+            isAttackMode = false;
+            canMoveThisTurn = false;
+            pendingWeapon = null;
+
+            if (gridManager != null)
+            {
+                gridManager.ClearAllHighlights();   // 공격 범위 표시 지우기
+            }
+            if (attacker != null)
+            {
+                attacker.SetSelected(false);
+            }
+
+            var ui = FindObjectOfType<InventoryUI>();
+            if (ui != null)
+            {
+                ui.Refresh();
+            }
+        }
+    
+
+    public void OnWeaponSelected(InventoryItem weapon)
+    {
+        if (!isWeaponSelectMode)
+            return;
+
+        if (selectedUnit == null)
+            return;
+
+        if (weapon == null || weapon.data == null || !weapon.data.isEquipment || weapon.IsBroken)
+        {
+            Debug.Log("사용할 수 없는 무기입니다.");
+            return;
+        }
+
+        pendingWeapon = weapon;
+        isWeaponSelectMode = false;
+        isAttackMode = true;
+
+        if (gridManager != null)
+        {
+            int min = weapon.data.minAttackRange;
+            int max = weapon.data.attackRange;
+            gridManager.HighlightAttackRange(selectedUnit, min, max);
+        }
+
+        UIManager.Instance.ShowInventory(false);
+
+        // 인벤토리 닫기
+        UIManager.Instance.ShowInventory(false);
+
+        Debug.Log($"무기 선택: {weapon.data.itemName} 이제 적을 클릭하면 공격합니다.");
     }
 }

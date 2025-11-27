@@ -6,6 +6,8 @@ public class Tile : MonoBehaviour
     public int x;
     public int y;
 
+    public UnitStatus occupant;   // 이 타일 위에 서 있는 유닛 (없으면 null)
+
     SpriteRenderer sr;
     Color normalColor;
     public Color highlightColor = new Color(1f, 0.6f, 0f); // 주황

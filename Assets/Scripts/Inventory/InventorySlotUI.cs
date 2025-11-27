@@ -30,4 +30,13 @@ public class InventorySlotUI : MonoBehaviour
             durabilityText.text = " ";
         }
     }
+
+    public void OnClickSlot()
+    {
+        // 무기를 선택하는 모드일 때만 동작하게
+        if (BattleManager.Instance != null && currentItem != null)
+        {
+            BattleManager.Instance.OnWeaponSelected(currentItem);
+        }
+    }
 }

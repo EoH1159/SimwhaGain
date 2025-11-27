@@ -77,7 +77,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 2
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0, g: 0.5017922, b: 1, a: 1}
+  m_Color: {r: 0, g: 0.2466731, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -107,6 +107,7 @@ MonoBehaviour:
   moveRange: 4
   luck: 5
   currentTile: {fileID: 0}
+  selectedColor: {r: 1, g: 0.7763735, b: 0.015686274, a: 1}
 --- !u!114 &2440878914260068199
 MonoBehaviour:
   m_ObjectHideFlags: 0
