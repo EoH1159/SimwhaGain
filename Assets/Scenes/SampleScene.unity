@@ -3840,22 +3840,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: EnemyUnit
       objectReference: {fileID: 0}
-    - target: {fileID: 6223034481410297794, guid: 44c4c9ef8548c284bbcd58c694963199, type: 3}
-      propertyPath: m_Color.b
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6223034481410297794, guid: 44c4c9ef8548c284bbcd58c694963199, type: 3}
-      propertyPath: m_Color.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6223034481410297794, guid: 44c4c9ef8548c284bbcd58c694963199, type: 3}
-      propertyPath: m_Color.r
-      value: 0.6320754
-      objectReference: {fileID: 0}
-    - target: {fileID: 8094057620106175738, guid: 44c4c9ef8548c284bbcd58c694963199, type: 3}
-      propertyPath: selectedColor.g
-      value: 0.7764706
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
